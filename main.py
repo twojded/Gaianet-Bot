@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get API URLs and models from environment variables
-API_URLS = [os.getenv(f"API_URL_{i}") for i in range(1, 61)]
-MODELS = [os.getenv(f"MODEL_{i}") for i in range(1, 61)]
+API_URLS = [os.getenv(f"API_URL_{i}") for i in range(1, 11)]
+MODELS = [os.getenv(f"MODEL_{i}") for i in range(1, 11)]
 
 def ask_question(api_url, model, question):
     payload = {
@@ -50,13 +50,21 @@ def save_response_to_file(response, folder, index):
 
 def read_random_question(filename):
     try:
-        with open(filename, 'r') as file:
+        with open(filename, 'r', encoding='utf-8') as file:
             questions = file.readlines()
             question = random.choice(questions).strip()
         return question
-    except Exception as e:
-        print(f"Failed to read questions from file: {e}")
-        return None
+    except UnicodeDecodeError:
+        print(f"Failed to read {filename} as UTF-8, trying with ISO-8859-1 encoding.")
+        try:
+            with open(filename, 'r', encoding='ISO-8859-1') as file:
+                questions = file.readlines()
+                question = random.choice(questions).strip()
+            return question
+        except Exception as e:
+            print(f"Failed to read questions from file: {e}")
+            return None
+
 
 def extract_question_from_response(response):
     try:
@@ -89,26 +97,27 @@ if __name__ == "__main__":
     timestamp_folder = os.path.join(log_folder, timestamp)
     
     i = 0
-    for index, (api_url, model) in enumerate(zip(API_URLS, MODELS), start=1):
-        print(f"Request to API #{index}")
-        question = read_random_question("questions.txt")
-        if question:
-            response = ask_question(api_url, model, question)
-            if response:
-                save_response_to_file(response, timestamp_folder, i + 1)
-                # Get the next question from the response
-                question = extract_question_from_response(response)
-                if not question:
-                    print("Failed to extract a new question from the response. Exiting loop.")
+    while True:  # Loop indefinitely
+        for index, (api_url, model) in enumerate(zip(API_URLS, MODELS), start=1):
+            print(f"Request to API #{index}")
+            question = read_random_question("questions.txt")
+            if question:
+                response = ask_question(api_url, model, question)
+                if response:
+                    save_response_to_file(response, timestamp_folder, i + 1)
+                    # Get the next question from the response
+                    question = extract_question_from_response(response)
+                    if not question:
+                        print("Failed to extract a new question from the response. Exiting loop.")
+                        break
+                    i += 1
+                    save_individual_question_to_file(question, timestamp_folder, i)
+                else:
+                    print(f"Failed to get a response in iteration {i}.")
                     break
-                i += 1
-                save_individual_question_to_file(question, timestamp_folder, i)
+                delay = random.randint(200, 600)  # Random time between 100 to 1500 seconds (adjustable)
+                print(f"Sleeping for {delay} seconds before the next API call.")
+                time.sleep(delay)
             else:
-                print(f"Failed to get a response in iteration {i}.")
+                print("No valid question found. Exiting.")
                 break
-            delay = random.randint(200, 600)  # Random time between 100 to 1500 seconds (adjustable)
-            print(f"Sleeping for {delay} seconds before the next API call.")
-            time.sleep(delay)
-        else:
-            print("No valid question found. Exiting.")
-            break
