@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get API URLs and models from environment variables
-API_URLS = [os.getenv(f"API_URL_{i}") for i in range(1, 11)]
-MODELS = [os.getenv(f"MODEL_{i}") for i in range(1, 11)]
+API_URLS = [os.getenv(f"API_URL_{i}") for i in range(1, 61)]
+MODELS = [os.getenv(f"MODEL_{i}") for i in range(1, 61)]
 
 def ask_question(api_url, model, question):
     payload = {
