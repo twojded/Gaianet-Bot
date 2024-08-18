@@ -108,16 +108,17 @@ if __name__ == "__main__":
                     # Get the next question from the response
                     question = extract_question_from_response(response)
                     if not question:
-                        print("Failed to extract a new question from the response. Exiting loop.")
-                        break
+                        print("Failed to extract a new question from the response. Skipping to the next API.")
+                        continue
                     i += 1
                     save_individual_question_to_file(question, timestamp_folder, i)
                 else:
-                    print(f"Failed to get a response in iteration {i}.")
-                    break
-                delay = random.randint(200, 600)  # Random time between 100 to 1500 seconds (adjustable)
-                print(f"Sleeping for {delay} seconds before the next API call.")
-                time.sleep(delay)
+                    print(f"Failed to get a response from API #{index}. Skipping to the next API.")
+                    continue  # Skip to the next API in case of failure
             else:
-                print("No valid question found. Exiting.")
-                break
+                print("No valid question found. Skipping to the next API.")
+                continue  # Skip to the next API if no valid question found
+
+            delay = random.randint(60, 120)  # Random time between 60 to 120 seconds (adjustable)
+            print(f"Sleeping for {delay} seconds before the next API call.")
+            time.sleep(delay)
